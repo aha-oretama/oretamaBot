@@ -2,7 +2,7 @@
 #   hubot scripts for diagnosing hubot
 #
 # Commands:
-#   hubot "ping"|"おーい"|"おーい？"|"おい"|"おい？"|"生きてる？"|"生きている？"|"大丈夫？" - Reply with "なに～？"
+#   hubot "ping"|"おーい|"おーい？"|"おい"|"おい？"|"生きてる？"|"生きている？"|"大丈夫？" - Reply with "なに～？"
 #   hubot "date"|"日にち"|"何日" - Reply with current date
 #   hubot "day"|"曜日" - Reply with current day
 #   hubot "time"|"時間"|"何時" - Reply with current time
@@ -14,7 +14,7 @@ moment = require('moment')
 moment.locale('ja')
 
 module.exports = (robot) ->
-  robot.respond /PING$|おーい$|おーい？$|おい$|おい？$|生きてる？$|生きている？$|大丈夫？$/i, (msg) ->
+  robot.respond /PING$|(おーい|おい|生きてる|生きている|大丈夫)(\?|？)*$/i, (msg) ->
     msg.send "なに～？"
 
   robot.respond /DATE$|.*日にち|.*何日/i, (msg) ->
