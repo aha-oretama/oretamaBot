@@ -46,7 +46,7 @@ module.exports = (robot) ->
     msg.send 'ツイート流すよー'
 
     stream.on 'tweet', (tweet) ->
-      msg.send "#{query}見つかったよー  https://twitter.com/#{tweet.user.screen_name}/status/#{tweet.id_str}"
+      msg.send "#{query}見つかったよー  https://twitter.com/#{tweet.user.screen_name}/status/#{tweet.id_str}" unless tweet.user.screen_name is "oretamaBot"
     stream.on "disconnect", (disconnectMessage) ->
       msg.send "ツイート流すが切れたー。理由: #{disconnectMessage}"
     stream.on "reconnect", (request, response, connectInterval) ->
