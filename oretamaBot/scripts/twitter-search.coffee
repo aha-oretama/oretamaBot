@@ -11,8 +11,8 @@
 #   HUBOT_TWITTER_TOKEN_SECRET
 #
 # Commands:
-#   hubot ツイート流して <query> - Continue to search Twitter for a query and to tweet
-#   hubot ツイート止めて - Stop to tweet
+#   hubot ツイート流して <query> - 指定したツイートが流れたら教えてあげるよー
+#   hubot ツイート止めて - ツイートを教えるのを止めるよー
 #
 # Author:
 #   aha-oretama <sekine_y_529@msn.com>
