@@ -59,7 +59,7 @@ search = (msg, operationHelper, query, isKindle, month, page) ->
 
     for item in items
       baseItem = item.ItemAttributes[0]
-      msg.send "#{baseItem.Title[0]}が見つかったよー\n発売日は #{if isKindle then baseItem.ReleaseDate[0] else baseItem.PublicationDate[0]}だよ #{item.DetailPageURL[0]}"
+      msg.send "#{baseItem.Title[0]}が見つかったよー。発売日は #{if isKindle then baseItem.ReleaseDate[0] else baseItem.PublicationDate[0]}だよー #{item.DetailPageURL[0]}"
 
     if page < totalPages and page < 10
       setTimeout(search, 5000, msg, operationHelper, query,isKindle,month, page + 1)
