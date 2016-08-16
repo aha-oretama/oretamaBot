@@ -60,7 +60,7 @@ createStream = (robot, msg, twit, stream, user, queryAndUser) ->
   return stream
 
 sendMessage = (robot, msg, user, message) ->
-  if typeof robot is 'Twitter'
+  if msg.hasOwnProperty("command")
     msg.command "@#{item.user}" + message
   else
     msg.send message
