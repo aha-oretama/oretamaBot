@@ -2,7 +2,8 @@
 #   hubot scripts for amazon-product-api hubot
 #
 # Commands:
-#   hubot "考え中" - "考え中"
+#   hubot kindle最新刊 <title> - kindle 版の最新刊を検索して表示
+#   hubot comic最新刊 <title> - コミック(kindle除く)版の最新刊を検索して表示
 #
 # Author:
 #   aha-oretama <sekine_y_529@msn.com>
@@ -25,16 +26,14 @@ getOperationHelper = () ->
     operationHelper = new OperationHelper config
   return operationHelper
 
-search = (msg, operationHelper, query, isKindle, during, page) ->
+search = (msg, operationHelper, query, isKindle, month, page) ->
 
   binding = if isKindle then 'kindle' else 'not kindle'
 
   operationHelper.execute('ItemSearch',{
     'SearchIndex': 'Books',
     'BrowseNode': comicNode,
-    'Title': query,
-#    'Power':"pubdate:#{during} and binding:#{binding}",
-    'Power':"pubdate:during 08-2016 or pubdate:during 07-2016 and binding:#{binding}",
+    'Power':"title-begins:#{query} and pubdate:after #{month} and binding:#{binding}",
     'ResponseGroup':'Large',
     'Sort':'daterank',
     'ItemPage': page
@@ -63,7 +62,7 @@ search = (msg, operationHelper, query, isKindle, during, page) ->
       msg.send "#{baseItem.Title[0]}が見つかったよー\n発売日は #{if isKindle then baseItem.ReleaseDate[0] else baseItem.PublicationDate[0]}だよ #{item.DetailPageURL[0]}"
 
     if page < totalPages and page < 10
-      setTimeout(search, 5000, msg, operationHelper, query,isKindle,during, page + 1)
+      setTimeout(search, 5000, msg, operationHelper, query,isKindle,month, page + 1)
 
   ).catch((err) ->
     console.log("error:", err)
@@ -71,13 +70,10 @@ search = (msg, operationHelper, query, isKindle, during, page) ->
 
 newReleaseSearch = (msg,isKindle) ->
   query = msg.match[1]
-  lastMonth = moment().add(-1,'M').format('MM-YYYY')
-  thisMonth = moment().format('MM-YYYY')
-  nextMonth = moment().add(1,'M').format('MM-YYYY')
-  during = "(during #{lastMonth} or during #{thisMonth} or during #{nextMonth})"
+  monthBeforeLast = moment().add(-2,'M').format('MM-YYYY')
 
   operationHelper = getOperationHelper()
-  search msg, operationHelper, query, isKindle ,during, 1
+  search msg, operationHelper, query, isKindle ,monthBeforeLast, 1
 
 module.exports = (robot) ->
 
