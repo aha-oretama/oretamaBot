@@ -2,8 +2,8 @@
 #   hubot scripts for amazon-product-api hubot
 #
 # Commands:
-#   hubot kindle最新刊 <title> - kindle 版の最新刊を検索して表示
-#   hubot comic最新刊 <title> - コミック(kindle除く)版の最新刊を検索して表示
+#   hubot kindle最新刊探して <title> - kindle 版の最新刊を検索して表示
+#   hubot comic最新刊探して <title> - コミック(kindle除く)版の最新刊を検索して表示
 #
 # Author:
 #   aha-oretama <sekine_y_529@msn.com>
@@ -69,18 +69,19 @@ search = (msg, operationHelper, query, isKindle, month, page) ->
   )
 
 newReleaseSearch = (msg,isKindle) ->
-  query = msg.match[1]
+  query = msg.match[2]
   monthBeforeLast = moment().add(-2,'M').format('MM-YYYY')
-
   operationHelper = getOperationHelper()
+
+  # 検索の実行
   search msg, operationHelper, query, isKindle ,monthBeforeLast, 1
 
 module.exports = (robot) ->
 
-  robot.respond /kindle最新刊 (\S+)$/i, (msg) ->
+  robot.respond /kindle最新刊(\S*) (\S+)$/i, (msg) ->
     newReleaseSearch msg, true
 
-  robot.respond /comic最新刊 (\S+)$/i, (msg) ->
+  robot.respond /comic最新刊(\S*) (\S+)$/i, (msg) ->
     newReleaseSearch msg, false
 
 #  new CronJob('*/5 * * * * *', () ->
