@@ -40,6 +40,8 @@ module.exports = (robot) ->
     query = msg.match[1]
     twit = getTwit()
 
+    # TODO: ２つ以上のツイートを同時に流すことができない
+    # TODO: アンド検索ができない
     stream.stop() if stream
     stream = twit.stream('statuses/filter', { track: query,language: 'ja' })
 
