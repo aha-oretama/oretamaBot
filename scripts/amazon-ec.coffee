@@ -12,74 +12,84 @@
 #   aha-oretama <sekine_y_529@msn.com>
 
 OperationHelper = require('apac').OperationHelper
-CronJob = require('cron').CronJob
+cronJob = require('cron').CronJob
 moment = require 'moment'
 _ = require 'lodash'
 
-comicNode = "2278488051"
 
-config =
-  assocId: process.env.AWS_ASSOCIATE_ID,
-  awsId: process.env.AWS_ID,
-  awsSecret: process.env.AWS_SECRET
-  locale: 'JP'
-  xml2jsOptions: { explicitArray: true }
+class AmazonSearch
+  @comicNode = "2278488051"
+  @operationHelper
 
-getOperationHelper = () ->
-  unless operationHelper
-    operationHelper = new OperationHelper config
-  return operationHelper
+  constructor: (associateId,id,secret)->  # コンストラクタ
+    config =
+      assocId: associateId
+      awsId: id
+      awsSecret: secret
+      locale: 'JP'
+      xml2jsOptions: { explicitArray: true }
 
-search = (msg, operationHelper, query, isKindle, month, page) ->
+    this.operationHelper = new OperationHelper(config)
 
-  binding = if isKindle then 'kindle' else 'not kindle'
+  search: (msg, query, isKindle, month, page) ->
 
-  operationHelper.execute('ItemSearch',{
-    'SearchIndex': 'Books',
-    'BrowseNode': comicNode,
-    'Power':"title-begins:#{query} and pubdate:after #{month} and binding:#{binding}",
-    'ResponseGroup':'Large',
-    'Sort':'daterank',
-    'ItemPage': page
-  }).then((response) ->
-    console.log "Raw response body: ", response.responseBody
+    binding = if isKindle then 'kindle' else 'not kindle'
 
-    # 処理が速すぎるとときどき AWS API がエラーとなるため処理終了
-    if response.result.ItemSearchResponse is undefined
-      return
+    this.operationHelper.execute('ItemSearch',{
+      'SearchIndex': 'Books',
+      'BrowseNode': this.comicNode,
+      'Power':"title-begins:#{query} and pubdate:after #{month} and binding:#{binding}",
+      'ResponseGroup':'Large',
+      'Sort':'daterank',
+      'ItemPage': page
+    }).then((response) ->
+      console.log "Raw response body: ", response.responseBody
 
-    baseResult = response.result.ItemSearchResponse.Items[0]
+      # 処理が速すぎるとときどき AWS API がエラーとなるため処理終了
+      if response.result.ItemSearchResponse is undefined
+        return
 
-    totalResults = parseInt baseResult.TotalResults[0], 10
-    totalPages = parseInt baseResult.TotalPages[0], 10
-    items = baseResult.Item
+      baseResult = response.result.ItemSearchResponse.Items[0]
 
-    console.log totalResults
-    console.log totalPages
+      totalResults = parseInt baseResult.TotalResults[0], 10
+      totalPages = parseInt baseResult.TotalPages[0], 10
+      items = baseResult.Item
 
-    if totalResults is 0
-      msg.send "#{query}は最近リリースされてないよー"
-      return
+      if totalResults is 0
+        msg.send "#{query}は最近リリースされてないよー"
+        return
 
-    for item in items
-      baseItem = item.ItemAttributes[0]
-      msg.send "#{baseItem.Title[0]}が見つかったよー。¥n発売日は #{if isKindle then baseItem.ReleaseDate[0] else baseItem.PublicationDate[0]}だよー¥n#{item.DetailPageURL[0]}"
+      for item in items
+        baseItem = item.ItemAttributes[0]
+        msg.send "#{baseItem.Title[0]}が見つかったよー。¥n発売日は #{if isKindle then baseItem.ReleaseDate[0] else baseItem.PublicationDate[0]}だよー¥n#{item.DetailPageURL[0]}"
 
-    if page < totalPages and page < 10
-      setTimeout(search, 5000, msg, operationHelper, query,isKindle,month, page + 1)
+      if page < totalPages and page < 10
+        setTimeout(this.search, 5000, msg, query,isKindle,month, page + 1)
 
-  ).catch((err) ->
-    console.log("error:", err)
-  )
+    ).catch((err) ->
+      console.log("error:", err)
+    )
+
+
+amazonSearch = new AmazonSearch(process.env.AWS_ASSOCIATE_ID, process.env.AWS_ID, process.env.AWS_SECRET)
 
 newReleaseSearch = (msg,query,isKindle) ->
   monthBeforeLast = moment().add(-2,'M').format('MM-YYYY')
-  operationHelper = getOperationHelper()
-
   # 検索の実行
-  search msg, operationHelper, query, isKindle ,monthBeforeLast, 1
+  amazonSearch.search(msg, query, isKindle ,monthBeforeLast, 1)
 
 module.exports = (robot) ->
+
+  # 起動時にクーロン設定
+  send = (name,msg) ->
+    response = new robot.Response(robot, {user : {id : -1, name : name}, text : "none", done : false}, [])
+    response.send "TODO"
+
+  # *(sec) *(min) *(hour) *(day) *(month) *(day of the week)
+  new cronJob('* * */10 * * *', () ->
+    currentTime = new Date
+    send ""
+  ).start()
 
   robot.respond /kindle最新刊(\S*) (\S+)$/i, (msg) ->
     newReleaseSearch msg, msg.match[2], true
