@@ -101,26 +101,26 @@ futureTimeSearch = (msg, query, isKindle, time, timeWord) ->
 module.exports = (robot) ->
 
   # クーロンで来週発売と明日発売の通知を設定
-  send = (name,message) ->
-    users = robot.brain.users()
-
-    i = 1
-    while user = users[i]
-      i++
-      console.log(user)
-      response = new robot.Response(robot, {user : {id : -1, name : user.name}, text : "none", done : false}, [])
-      stores =  robot.brain.get(user.name)
-
-      for store in stores
-        nexWeekSearch(response, store.title, store.kindle)
-        tomorrowSearch(response, store.title, store.kindle)
-
-  # 起動時にクーロン設定
-  # *(sec) *(min) *(hour) *(day) *(month) *(day of the week)
-  new cronJob('*/30 * * * * *', () ->
-    currentTime = new Date
-    send ""
-  ).start()
+#  send = (name,message) ->
+#    users = robot.brain.users()
+#
+#    i = 1
+#    while user = users[i]
+#      i++
+#      console.log(user)
+#      response = new robot.Response(robot, {user : {id : -1, name : user.name}, text : "none", done : false}, [])
+#      stores =  robot.brain.get(user.name)
+#
+#      for store in stores
+#        nexWeekSearch(response, store.title, store.kindle)
+#        tomorrowSearch(response, store.title, store.kindle)
+#
+#  # 起動時にクーロン設定
+#  # *(sec) *(min) *(hour) *(day) *(month) *(day of the week)
+#  new cronJob('*/30 * * * * *', () ->
+#    currentTime = new Date
+#    send ""
+#  ).start()
 
   robot.respond /kindle最新刊(\S*) (\S+)$/i, (msg) ->
     newReleaseSearch msg, msg.match[2], true
@@ -130,19 +130,24 @@ module.exports = (robot) ->
 
   robot.respond /kindle登録(\S*) (\S+)$/i, (msg) ->
     message = msg.match[2]
-    stores = robot.brain.get(msg.envelope.user.name) ? []
+    # twitter とshell でプロパティが変わるため
+    user = if msg.hasOwnProperty('user') then msg.user.user else msg.envelope.user.name
+
+    stores = robot.brain.get(user) ? []
 
     # 重複を除く
     if !stores.filter((item) -> item.title is message).length
       stores.push({title: message, kindle: true})
 
     # 保存
-    robot.brain.set msg.envelope.user.name, stores
+    robot.brain.set user, stores
     robot.brain.save()
 
     msg.send "登録内容は" + stores.reduce((previous, current) -> {title:"#{previous.title},#{current.title}"}).title
 
   robot.respond /登録内容(\S*)/i, (msg) ->
+    # twitter とshell でプロパティが変わるため
+    user = if msg.hasOwnProperty('user') then msg.user.user else msg.envelope.user.name
     # 呼び出し
-    msg.send robot.brain.get(msg.envelope.user.name)
+    msg.send robot.brain.get(user)
 
