@@ -39,3 +39,6 @@ jspm_packages
 # IDE
 .idea
 *.iml
+
+# hubot
+.hubot_history
