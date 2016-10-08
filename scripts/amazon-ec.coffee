@@ -86,27 +86,38 @@ newReleaseSearch = (msg,query,isKindle) ->
 
 nexWeekSearch = (msg, query , isKindle) ->
   nextWeek = moment().add(+1,'w').format('YYYY-MM-DD')
-  futureTimeSearch(msg,query,isKindle, nextWeek)
+  futureTimeSearch(msg,query,isKindle, nextWeek, "来週")
 
 tomorrowSearch = (msg, query , isKindle) ->
   nextDay = moment().add(+1,'d').format('YYYY-MM-DD')
-  futureTimeSearch(msg,query,isKindle, nextDay)
+  futureTimeSearch(msg,query,isKindle, nextDay, "明日")
 
-futureTimeSearch = (msg, query, isKindle, time) ->
+futureTimeSearch = (msg, query, isKindle, time, timeWord) ->
   amazonSearch.search(query, isKindle , 1,
-    ((item) -> msg.send "#{item.title}が発売されるよ。¥n発売日は #{item.releaseDate}だよー¥n#{item.url}" if item.releaseDate is time)
+    ((item) -> msg.send "#{item.title}が#{timeWord}発売されるよー¥n#{item.url}" if item.releaseDate is time)
   )
 
 
 module.exports = (robot) ->
 
-  # 起動時にクーロン設定
-  send = (name,msg) ->
-    response = new robot.Response(robot, {user : {id : -1, name : name}, text : "none", done : false}, [])
-    response.send "TODO"
+  # クーロンで来週発売と明日発売の通知を設定
+  send = (name,message) ->
+    users = robot.brain.users()
 
+    i = 1
+    while user = users[i]
+      i++
+      console.log(user)
+      response = new robot.Response(robot, {user : {id : -1, name : user.name}, text : "none", done : false}, [])
+      stores =  robot.brain.get(user.name)
+
+      for store in stores
+        nexWeekSearch(response, store.title, store.kindle)
+        tomorrowSearch(response, store.title, store.kindle)
+
+  # 起動時にクーロン設定
   # *(sec) *(min) *(hour) *(day) *(month) *(day of the week)
-  new cronJob('0 * * * * *', () ->
+  new cronJob('*/30 * * * * *', () ->
     currentTime = new Date
     send ""
   ).start()
@@ -119,17 +130,17 @@ module.exports = (robot) ->
 
   robot.respond /kindle登録(\S*) (\S+)$/i, (msg) ->
     message = msg.match[2]
-    originalArray = robot.brain.get(msg.envelope.user.name) ? []
+    stores = robot.brain.get(msg.envelope.user.name) ? []
 
     # 重複を除く
-    if !originalArray.filter((item) -> item.title is message).length
-      originalArray.push({title: message, kindle: true})
+    if !stores.filter((item) -> item.title is message).length
+      stores.push({title: message, kindle: true})
 
     # 保存
-    robot.brain.set msg.envelope.user.name, originalArray
+    robot.brain.set msg.envelope.user.name, stores
     robot.brain.save()
 
-    msg.send "登録内容は" + originalArray.reduce((previous, current) -> {title:"#{previous.title},#{current.title}"}).title
+    msg.send "登録内容は" + stores.reduce((previous, current) -> {title:"#{previous.title},#{current.title}"}).title
 
   robot.respond /登録内容(\S*)/i, (msg) ->
     # 呼び出し
