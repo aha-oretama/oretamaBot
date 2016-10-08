@@ -31,7 +31,7 @@ class AmazonSearch
 
     this.operationHelper = new OperationHelper(config)
 
-  search: (msg, query, isKindle, month, page) ->
+  search: (query, isKindle, month, page, callback, nothingCallBack) ->
 
     binding = if isKindle then 'kindle' else 'not kindle'
 
@@ -56,15 +56,19 @@ class AmazonSearch
       items = baseResult.Item
 
       if totalResults is 0
-        msg.send "#{query}は最近リリースされてないよー"
+        nothingCallBack
         return
 
       for item in items
         baseItem = item.ItemAttributes[0]
-        msg.send "#{baseItem.Title[0]}が見つかったよー。¥n発売日は #{if isKindle then baseItem.ReleaseDate[0] else baseItem.PublicationDate[0]}だよー¥n#{item.DetailPageURL[0]}"
+        callback {
+          title: baseItem.Title[0],
+          releaseDate: if isKindle then baseItem.ReleaseDate[0] else baseItem.PublicationDate[0],
+          url: item.DetailPageURL[0]
+        }
 
       if page < totalPages and page < 10
-        setTimeout(this.search, 5000, msg, query,isKindle,month, page + 1)
+        setTimeout(this.search, 5000, query,isKindle,month, page + 1,callback, nothingCallBack)
 
     ).catch((err) ->
       console.log("error:", err)
@@ -76,7 +80,9 @@ amazonSearch = new AmazonSearch(process.env.AWS_ASSOCIATE_ID, process.env.AWS_ID
 newReleaseSearch = (msg,query,isKindle) ->
   monthBeforeLast = moment().add(-2,'M').format('MM-YYYY')
   # 検索の実行
-  amazonSearch.search(msg, query, isKindle ,monthBeforeLast, 1)
+  amazonSearch.search(query, isKindle ,monthBeforeLast, 1,
+    ((item) -> msg.send "#{item.title}が見つかったよー。¥n発売日は #{item.releaseDate}だよー¥n#{item.url}"),
+    (() -> msg.send "#{query}は最近リリースされてないよー"))
 
 module.exports = (robot) ->
 
