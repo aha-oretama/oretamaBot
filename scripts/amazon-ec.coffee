@@ -97,6 +97,28 @@ futureTimeSearch = (msg, query, isKindle, time, timeWord) ->
     (() -> {})
   )
 
+setBrain = (robot , msg, query, isKindle) ->
+  # twitter とshell でプロパティが変わるため
+  user = if msg.envelope.user.hasOwnProperty('user') then msg.envelope.user.user else msg.envelope.user.name
+
+  stores = robot.brain.get(user) ? []
+
+  # 重複を除く
+  if !stores.filter((item) -> item.title is message).length
+    stores.push({title: query, kindle: isKindle})
+
+  # user のID は連番で登録する
+  i = 1
+  users = robot.brain.users()
+  while ( users[i] )
+    i++
+  # 保存
+  robot.brain.userForId(i, name: user) if !robot.brain.userForName(user) # user がいなければ保存
+  robot.brain.set user, stores
+  robot.brain.save()
+
+  msg.send "登録内容は" + stores.reduce((previous, current) -> {title:"#{previous.title},#{current.title}"}).title
+
 
 module.exports = (robot) ->
 
@@ -131,28 +153,10 @@ module.exports = (robot) ->
     newReleaseSearch msg, msg.match[2], false
 
   robot.respond /kindle登録(\S*) (\S+)$/i, (msg) ->
+    setBrain(robot,msg,msg.match[2], true)
 
-    message = msg.match[2]
-    # twitter とshell でプロパティが変わるため
-    user = if msg.envelope.user.hasOwnProperty('user') then msg.envelope.user.user else msg.envelope.user.name
-
-    stores = robot.brain.get(user) ? []
-
-    # 重複を除く
-    if !stores.filter((item) -> item.title is message).length
-      stores.push({title: message, kindle: true})
-
-    # user のID は連番で登録する
-    i = 1
-    users = robot.brain.users()
-    while ( users[i] )
-      i++
-    # 保存
-    robot.brain.userForId(i, name: user) if !robot.brain.userForName(user) # user がいなければ保存
-    robot.brain.set user, stores
-    robot.brain.save()
-
-    msg.send "登録内容は" + stores.reduce((previous, current) -> {title:"#{previous.title},#{current.title}"}).title
+  robot.respond /comic登録(\S*) (\S+)$/i, (msg) ->
+    setBrain(robot,msg,msg.match[2], false)
 
   robot.respond /登録内容(\S*)/i, (msg) ->
     # twitter とshell でプロパティが変わるため
