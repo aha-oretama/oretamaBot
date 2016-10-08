@@ -32,13 +32,12 @@ class AmazonSearch
 
   search: (query, isKindle, page, callback, nothingCallBack) ->
 
-    binding = if isKindle then 'kindle' else 'not kindle'
     month = moment().add(-2,'M').format('MM-YYYY')
 
     this.operationHelper.execute('ItemSearch',{
       'SearchIndex': 'Books',
       'BrowseNode': comicNode,
-      'Power':"title-begins:#{query} and pubdate:after #{month} and binding:#{binding}",
+      'Power':"title-begins:#{query} and pubdate:after #{month} and binding:#{binding = if isKindle then 'kindle' else 'not kindle'}",
       'ResponseGroup':'Large',
       'Sort':'daterank',
       'ItemPage': page
@@ -68,7 +67,7 @@ class AmazonSearch
         }
 
       if page < totalPages and page < 10
-        setTimeout(this.search, 5000, query,isKindle, page + 1,callback, nothingCallBack)
+        setTimeout((() -> this.search), 5000, query, isKindle, page + 1, callback, nothingCallBack)
 
     ).catch((err) ->
       console.log("error:", err)
@@ -80,12 +79,12 @@ amazonSearch = new AmazonSearch(process.env.AWS_ASSOCIATE_ID, process.env.AWS_ID
 newReleaseSearch = (msg,query,isKindle) ->
   # 検索の実行
   amazonSearch.search(query, isKindle, 1,
-    ((item) -> msg.send "#{item.title}が見つかったよー。¥n発売日は #{item.releaseDate}だよー¥n#{item.url}"),
+    ((item) -> msg.send "#{item.title}が見つかったよー。\n発売日は #{item.releaseDate}だよー\n#{item.url}"),
     (() -> msg.send "#{query}は最近リリースされてないよー")
   )
 
 nexWeekSearch = (msg, query , isKindle) ->
-  nextWeek = moment().add(+1,'w').format('YYYY-MM-DD')
+  nextWeek = moment().add(+1,'w').add(+1,'d').format('YYYY-MM-DD')
   futureTimeSearch(msg,query,isKindle, nextWeek, "来週")
 
 tomorrowSearch = (msg, query , isKindle) ->
@@ -94,33 +93,36 @@ tomorrowSearch = (msg, query , isKindle) ->
 
 futureTimeSearch = (msg, query, isKindle, time, timeWord) ->
   amazonSearch.search(query, isKindle , 1,
-    ((item) -> msg.send "#{item.title}が#{timeWord}発売されるよー¥n#{item.url}" if item.releaseDate is time)
+    ((item) -> msg.send "#{item.title}が#{timeWord}発売されるよー。\n #{item.url}" if item.releaseDate is time),
+    (() -> {})
   )
 
 
 module.exports = (robot) ->
 
   # クーロンで来週発売と明日発売の通知を設定
-#  send = (name,message) ->
-#    users = robot.brain.users()
-#
-#    i = 1
-#    while user = users[i]
-#      i++
-#      console.log(user)
-#      response = new robot.Response(robot, {user : {id : -1, name : user.name}, text : "none", done : false}, [])
-#      stores =  robot.brain.get(user.name)
-#
-#      for store in stores
-#        nexWeekSearch(response, store.title, store.kindle)
-#        tomorrowSearch(response, store.title, store.kindle)
-#
-#  # 起動時にクーロン設定
-#  # *(sec) *(min) *(hour) *(day) *(month) *(day of the week)
-#  new cronJob('*/30 * * * * *', () ->
-#    currentTime = new Date
-#    send ""
-#  ).start()
+  send = (name,message) ->
+    users = robot.brain.users()
+
+    console.log users
+
+    i = 1
+    while user = users[i]
+      i++
+      console.log(user.name)
+      response = new robot.Response(robot, {user : {id : -1, name : user.name, user:user.name}, text : "none", done : false}, [])
+      stores =  robot.brain.get(user.name)
+
+      for store in stores
+        nexWeekSearch(response, store.title, store.kindle)
+        tomorrowSearch(response, store.title, store.kindle)
+
+  # 起動時にクーロン設定
+  # *(sec) *(min) *(hour) *(day) *(month) *(day of the week)
+  new cronJob('*/30 * * * * *', () ->
+    currentTime = new Date
+    send ""
+  ).start()
 
   robot.respond /kindle最新刊(\S*) (\S+)$/i, (msg) ->
     newReleaseSearch msg, msg.match[2], true
@@ -129,9 +131,10 @@ module.exports = (robot) ->
     newReleaseSearch msg, msg.match[2], false
 
   robot.respond /kindle登録(\S*) (\S+)$/i, (msg) ->
+
     message = msg.match[2]
     # twitter とshell でプロパティが変わるため
-    user = if msg.hasOwnProperty('user') then msg.user.user else msg.envelope.user.name
+    user = if msg.envelope.user.hasOwnProperty('user') then msg.envelope.user.user else msg.envelope.user.name
 
     stores = robot.brain.get(user) ? []
 
@@ -139,7 +142,13 @@ module.exports = (robot) ->
     if !stores.filter((item) -> item.title is message).length
       stores.push({title: message, kindle: true})
 
+    # user のID は連番で登録する
+    i = 1
+    users = robot.brain.users()
+    while ( users[i] )
+      i++
     # 保存
+    robot.brain.userForId(i, name: user) if !robot.brain.userForName(user) # user がいなければ保存
     robot.brain.set user, stores
     robot.brain.save()
 
@@ -147,7 +156,7 @@ module.exports = (robot) ->
 
   robot.respond /登録内容(\S*)/i, (msg) ->
     # twitter とshell でプロパティが変わるため
-    user = if msg.hasOwnProperty('user') then msg.user.user else msg.envelope.user.name
+    user = if msg.envelope.user.hasOwnProperty('user') then msg.envelope.user.user else msg.envelope.user.name
     # 呼び出し
-    msg.send robot.brain.get(user)
-
+    stores = robot.brain.get(user)
+    msg.send "登録内容は" + stores.reduce((previous, current) -> {title:"#{previous.title},#{current.title}"}).title
