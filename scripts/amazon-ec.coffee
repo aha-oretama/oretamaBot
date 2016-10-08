@@ -16,7 +16,6 @@ cronJob = require('cron').CronJob
 moment = require 'moment'
 _ = require 'lodash'
 
-
 class AmazonSearch
   comicNode = "2278488051"
   @operationHelper
@@ -31,9 +30,10 @@ class AmazonSearch
 
     this.operationHelper = new OperationHelper(config)
 
-  search: (query, isKindle, month, page, callback, nothingCallBack) ->
+  search: (query, isKindle, page, callback, nothingCallBack) ->
 
     binding = if isKindle then 'kindle' else 'not kindle'
+    month = moment().add(-2,'M').format('MM-YYYY')
 
     this.operationHelper.execute('ItemSearch',{
       'SearchIndex': 'Books',
@@ -68,7 +68,7 @@ class AmazonSearch
         }
 
       if page < totalPages and page < 10
-        setTimeout(this.search, 5000, query,isKindle,month, page + 1,callback, nothingCallBack)
+        setTimeout(this.search, 5000, query,isKindle, page + 1,callback, nothingCallBack)
 
     ).catch((err) ->
       console.log("error:", err)
@@ -78,11 +78,25 @@ class AmazonSearch
 amazonSearch = new AmazonSearch(process.env.AWS_ASSOCIATE_ID, process.env.AWS_ID, process.env.AWS_SECRET)
 
 newReleaseSearch = (msg,query,isKindle) ->
-  monthBeforeLast = moment().add(-2,'M').format('MM-YYYY')
   # 検索の実行
-  amazonSearch.search(query, isKindle ,monthBeforeLast, 1,
+  amazonSearch.search(query, isKindle, 1,
     ((item) -> msg.send "#{item.title}が見つかったよー。¥n発売日は #{item.releaseDate}だよー¥n#{item.url}"),
-    (() -> msg.send "#{query}は最近リリースされてないよー"))
+    (() -> msg.send "#{query}は最近リリースされてないよー")
+  )
+
+nexWeekSearch = (msg, query , isKindle) ->
+  nextWeek = moment().add(+1,'w').format('YYYY-MM-DD')
+  futureTimeSearch(msg,query,isKindle, nextWeek)
+
+tomorrowSearch = (msg, query , isKindle) ->
+  nextDay = moment().add(+1,'d').format('YYYY-MM-DD')
+  futureTimeSearch(msg,query,isKindle, nextDay)
+
+futureTimeSearch = (msg, query, isKindle, time) ->
+  amazonSearch.search(query, isKindle , 1,
+    ((item) -> msg.send "#{item.title}が発売されるよ。¥n発売日は #{item.releaseDate}だよー¥n#{item.url}" if item.releaseDate is time)
+  )
+
 
 module.exports = (robot) ->
 
@@ -92,7 +106,7 @@ module.exports = (robot) ->
     response.send "TODO"
 
   # *(sec) *(min) *(hour) *(day) *(month) *(day of the week)
-  new cronJob('* * */10 * * *', () ->
+  new cronJob('0 * * * * *', () ->
     currentTime = new Date
     send ""
   ).start()
@@ -120,3 +134,4 @@ module.exports = (robot) ->
   robot.respond /登録内容(\S*)/i, (msg) ->
     # 呼び出し
     msg.send robot.brain.get(msg.envelope.user.name)
+
