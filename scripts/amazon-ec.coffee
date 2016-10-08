@@ -18,7 +18,7 @@ _ = require 'lodash'
 
 
 class AmazonSearch
-  @comicNode = "2278488051"
+  comicNode = "2278488051"
   @operationHelper
 
   constructor: (associateId,id,secret)->  # コンストラクタ
@@ -37,7 +37,7 @@ class AmazonSearch
 
     this.operationHelper.execute('ItemSearch',{
       'SearchIndex': 'Books',
-      'BrowseNode': this.comicNode,
+      'BrowseNode': comicNode,
       'Power':"title-begins:#{query} and pubdate:after #{month} and binding:#{binding}",
       'ResponseGroup':'Large',
       'Sort':'daterank',
