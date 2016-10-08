@@ -4,6 +4,9 @@
 # Commands:
 #   hubot kindle最新刊探して <title> - kindle 版の最新刊を検索して表示
 #   hubot comic最新刊探して <title> - コミック(kindle除く)版の最新刊を検索して表示
+#   hubot kindle登録して <title> - kindle 版の最新刊を探す条件を保存する
+#   hubot comic登録して <title> - comic 版の最新刊を探す条件を保存する
+#   hubot 登録内容教えて - 登録内容を表示する
 #
 # Author:
 #   aha-oretama <sekine_y_529@msn.com>
@@ -85,19 +88,18 @@ module.exports = (robot) ->
     newReleaseSearch msg, msg.match[2], false
 
   robot.respond /kindle登録(\S*) (\S+)$/i, (msg) ->
+    message = msg.match[2]
+    originalArray = robot.brain.get(msg.envelope.user.name) ? []
+
     # 重複を除く
-    original = robot.brain.get(msg.envelope.user.name)
-    originalArray = if original then original.split(',') else []
-    originalArray.push(msg.match[2])
-    message = _.uniq(originalArray).join(",")
+    if !originalArray.filter((item) -> item.title is message).length
+      originalArray.push({title: message, kindle: true})
 
     # 保存
-    robot.brain.set msg.envelope.user.name, message
+    robot.brain.set msg.envelope.user.name, originalArray
     robot.brain.save()
-    msg.send message
-
-    for query in originalArray
-      newReleaseSearch msg, query, true
+    for obj in originalArray
+      msg.send obj.title
 
   robot.respond /登録内容(\S*)/i, (msg) ->
     # 呼び出し
