@@ -141,7 +141,7 @@ module.exports = (robot) ->
 
   # 起動時にクーロン設定
   # *(sec) *(min) *(hour) *(day) *(month) *(day of the week)
-  new cronJob('*/30 * * * * *', () ->
+  new cronJob('0 0 12 * * *', () ->
     currentTime = new Date
     send ""
   ).start()
