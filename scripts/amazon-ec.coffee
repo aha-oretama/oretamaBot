@@ -84,7 +84,7 @@ newReleaseSearch = (msg,query,isKindle) ->
   )
 
 nexWeekSearch = (msg, query , isKindle) ->
-  nextWeek = moment().add(+1,'w').add(+1,'d').format('YYYY-MM-DD')
+  nextWeek = moment().add(+1,'w').format('YYYY-MM-DD')
   futureTimeSearch(msg,query,isKindle, nextWeek, "来週")
 
 tomorrowSearch = (msg, query , isKindle) ->
