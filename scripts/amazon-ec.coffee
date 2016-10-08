@@ -11,6 +11,7 @@
 OperationHelper = require('apac').OperationHelper
 CronJob = require('cron').CronJob
 moment = require 'moment'
+_ = require 'lodash'
 
 comicNode = "2278488051"
 
@@ -68,8 +69,7 @@ search = (msg, operationHelper, query, isKindle, month, page) ->
     console.log("error:", err)
   )
 
-newReleaseSearch = (msg,isKindle) ->
-  query = msg.match[2]
+newReleaseSearch = (msg,query,isKindle) ->
   monthBeforeLast = moment().add(-2,'M').format('MM-YYYY')
   operationHelper = getOperationHelper()
 
@@ -79,13 +79,26 @@ newReleaseSearch = (msg,isKindle) ->
 module.exports = (robot) ->
 
   robot.respond /kindle最新刊(\S*) (\S+)$/i, (msg) ->
-    newReleaseSearch msg, true
+    newReleaseSearch msg, msg.match[2], true
 
   robot.respond /comic最新刊(\S*) (\S+)$/i, (msg) ->
-    newReleaseSearch msg, false
+    newReleaseSearch msg, msg.match[2], false
 
-#  new CronJob('*/5 * * * * *', () ->
-#    releaseList = []
-#    releaseList.push(search [], operationHelper, 1)
-#    robot.send releaseList
-#  ).start()
+  robot.respond /kindle登録(\S*) (\S+)$/i, (msg) ->
+    # 重複を除く
+    original = robot.brain.get(msg.envelope.user.name)
+    originalArray = if original then original.split(',') else []
+    originalArray.push(msg.match[2])
+    message = _.uniq(originalArray).join(",")
+
+    # 保存
+    robot.brain.set msg.envelope.user.name, message
+    robot.brain.save()
+    msg.send message
+
+    for query in originalArray
+      newReleaseSearch msg, query, true
+
+  robot.respond /登録内容(\S*)/i, (msg) ->
+    # 呼び出し
+    msg.send robot.brain.get(msg.envelope.user.name)
