@@ -2,7 +2,7 @@
 #   Generates help commands for Hubot.
 #
 # Commands:
-#   hubot "help"|"ヘルプ"|"使い方"|"教えて" - 使い方を教えてあげるよー
+#   hubot (help|ヘルプ|使い方|教えて) - 使い方を教えてあげるよー
 #
 # Notes:
 #   These commands are grabbed from comment blocks at the top of each file.

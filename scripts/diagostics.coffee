@@ -2,10 +2,10 @@
 #   hubot scripts for diagnosing hubot
 #
 # Commands:
-#   hubot "ping"|"おーい|"おーい？"|"おい"|"おい？"|"生きてる？"|"生きている？"|"大丈夫？" - "なに～？"
-#   hubot "date"|"日にち"|"何日" - 今日が何日か教えてあげるよー
-#   hubot "day"|"曜日" - 今日が何曜日か教えてあげるよー
-#   hubot "time"|"時間"|"何時" - 今が何時か教えてあげるよー
+#   hubot (ping|おーい|おーい？|おい|おい？|生きてる？|生きている？|大丈夫？) - なに～？
+#   hubot (date|日にち|何日) - 今日が何日か教えてあげるよー
+#   hubot (day|曜日) - 今日が何曜日か教えてあげるよー
+#   hubot (time|時間|何時) - 今が何時か教えてあげるよー
 #
 # Author:
 #   aha-oretama <sekine_y_529@msn.com>
