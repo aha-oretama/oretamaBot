@@ -104,7 +104,7 @@ setBrain = (robot , msg, query, isKindle) ->
   stores = robot.brain.get(user) ? []
 
   # 重複を除く
-  if !stores.filter((item) -> item.title is message).length
+  if !stores.filter((item) -> item.title is query).length
     stores.push({title: query, kindle: isKindle})
 
   # user のID は連番で登録する
