@@ -120,8 +120,19 @@ setBrain = (robot , msg, titlesStr, isKindle) ->
   robot.brain.set user, stores
   robot.brain.save()
 
-  msg.send "登録内容は" + stores.reduce((previous, current) -> {title:"#{previous.title},#{current.title}"}).title
+  showRegisteredContents(
+    stores.reduce((previous, current) -> {title:"#{previous.title},#{current.title}"}).title,
+    (item) -> (msg.send "登録内容は" + item)
+  )
 
+showRegisteredContents = (str,callback) ->
+
+  while(str.length > 120)
+    index = str.substring(0,120).lastIndexOf(',')
+    callback(str.substring(0,index))
+    str = str.substring(index+1)
+
+  callback(str)
 
 module.exports = (robot) ->
 
@@ -166,4 +177,8 @@ module.exports = (robot) ->
     user = if msg.envelope.user.hasOwnProperty('user') then msg.envelope.user.user else msg.envelope.user.name
     # 呼び出し
     stores = robot.brain.get(user)
-    msg.send "登録内容は" + stores.reduce((previous, current) -> {title:"#{previous.title},#{current.title}"}).title
+
+    showRegisteredContents(
+      stores.reduce((previous, current) -> {title:"#{previous.title},#{current.title}"}).title,
+      (item) -> (msg.send "登録内容は" + item)
+    )
