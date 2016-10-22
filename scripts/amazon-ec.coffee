@@ -42,10 +42,13 @@ class AmazonSearch
       'Sort':'daterank',
       'ItemPage': page
     }).then((response) ->
-      console.log "Raw response body: ", response.responseBody
+      console.log "debug: Raw response body: ", response.responseBody
 
       # 処理が速すぎるとときどき AWS API がエラーとなるため処理終了
       if response.result.ItemSearchResponse is undefined
+        console.log 'error: 処理が速すぎてエラーになりました'
+        # 処理がたまらないように余裕を持たせる
+        setTimeout((() -> amazonSearch.search(query, isKindle, page , callback, nothingCallBack)), 60000)
         return
 
       baseResult = response.result.ItemSearchResponse.Items[0]
@@ -67,7 +70,7 @@ class AmazonSearch
         }
 
       if page < totalPages and page < 10
-        setTimeout((() -> this.search), 5000, query, isKindle, page + 1, callback, nothingCallBack)
+        setTimeout((() -> amazonSearch.search(query, isKindle, page + 1 , callback, nothingCallBack)), 5000)
 
     ).catch((err) ->
       console.log("error:", err)
@@ -143,6 +146,8 @@ module.exports = (robot) ->
     console.log users
 
     i = 1
+    timeWait = 0
+
     while user = users[i]
       i++
       console.log(user.name)
@@ -150,8 +155,9 @@ module.exports = (robot) ->
       stores =  robot.brain.get(user.name)
 
       for store in stores
-        nexWeekSearch(response, store.title, store.kindle)
-        tomorrowSearch(response, store.title, store.kindle)
+        timeWait += 10000
+        setTimeout(nexWeekSearch, timeWait, msg, store.title, store.kindle)
+        setTimeout(tomorrowSearch, timeWait + 5000, msg, store.title, store.kindle)
 
   # 起動時にクーロン設定
   # *(sec) *(min) *(hour) *(day) *(month) *(day of the week)
