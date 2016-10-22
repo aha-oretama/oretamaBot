@@ -4,8 +4,8 @@
 # Commands:
 #   hubot kindle最新刊探して <title> - kindle 版の最新刊を検索して表示
 #   hubot comic最新刊探して <title> - コミック(kindle除く)版の最新刊を検索して表示
-#   hubot kindle登録して <title> - kindle 版の最新刊を探す条件を保存する
-#   hubot comic登録して <title> - comic 版の最新刊を探す条件を保存する
+#   hubot kindle登録して <title>[,<title>,...] - kindle 版の最新刊を探す条件を保存する
+#   hubot comic登録して <title>[,<title>,...] - comic 版の最新刊を探す条件を保存する
 #   hubot 登録内容教えて - 登録内容を表示する
 #
 # Author:
@@ -97,15 +97,18 @@ futureTimeSearch = (msg, query, isKindle, time, timeWord) ->
     (() -> {})
   )
 
-setBrain = (robot , msg, query, isKindle) ->
+setBrain = (robot , msg, titlesStr, isKindle) ->
   # twitter とshell でプロパティが変わるため
   user = if msg.envelope.user.hasOwnProperty('user') then msg.envelope.user.user else msg.envelope.user.name
 
   stores = robot.brain.get(user) ? []
 
   # 重複を除く
-  if !stores.filter((item) -> item.title is query).length
-    stores.push({title: query, kindle: isKindle})
+  titles = titlesStr.split(',')
+
+  for title in titles
+    if !stores.filter((item) -> item.title is title).length
+      stores.push({title: title, kindle: isKindle})
 
   # user のID は連番で登録する
   i = 1
