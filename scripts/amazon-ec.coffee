@@ -156,8 +156,8 @@ module.exports = (robot) ->
 
       for store in stores
         timeWait += 10000
-        setTimeout(nexWeekSearch, timeWait, msg, store.title, store.kindle)
-        setTimeout(tomorrowSearch, timeWait + 5000, msg, store.title, store.kindle)
+        setTimeout(nexWeekSearch, timeWait, response, store.title, store.kindle)
+        setTimeout(tomorrowSearch, timeWait + 5000, response, store.title, store.kindle)
 
   # 起動時にクーロン設定
   # *(sec) *(min) *(hour) *(day) *(month) *(day of the week)
