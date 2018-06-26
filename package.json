@@ -13,9 +13,15 @@
     "jobot-brain-file": "^1.0.1",
     "lodash": "^4.16.4",
     "moment": "^2.14.1",
-    "twit": "^2.2.4"
+    "twit": "^2.2.4",
+    "snyk": "^1.85.0"
   },
   "engines": {
     "node": "0.10.x"
-  }
+  },
+  "scripts": {
+    "snyk-protect": "snyk protect",
+    "prepare": "npm run snyk-protect"
+  },
+  "snyk": true
 }
